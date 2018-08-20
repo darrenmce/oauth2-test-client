@@ -47,7 +47,7 @@ app.get('/authorize_cb', (req, res, next) => {
   console.log('ill go login for this user now using the auth code:', req.query.code);
 
   rp({
-    uri: `${authServer}/auth/token`,
+    uri: `${authServer}/token`,
     method: 'POST',
     form: {
       grant_type: 'authorization_code',
@@ -57,7 +57,7 @@ app.get('/authorize_cb', (req, res, next) => {
     },
     auth: {
       username: 'test',
-      password: '123'
+      password: 'Password1!'
     },
     json: true
   }).then((response) => {
