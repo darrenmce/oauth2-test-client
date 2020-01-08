@@ -70,6 +70,13 @@ app.get('/authorize_cb', (req, res, next) => {
 
 });
 
+app.use('/logout', (req, res) => {
+  if (req.session.auth) {
+    delete req.session.auth;
+  }
+  res.redirect('/');
+});
+
 app.use((req, res, next) => {
   if (!req.session.auth) {
     req.session.redirectTo = req.url;
