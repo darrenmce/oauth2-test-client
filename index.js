@@ -1,6 +1,7 @@
 const express = require('express');
 const buildUrl = require('build-url');
 const sessions = require('client-sessions');
+const crypto = require('crypto');
 const rp = require('request-promise');
 
 const app = express();
@@ -8,9 +9,10 @@ const app = express();
 const authServer = 'http://localhost:8080';
 const clientId = 'test';
 const myUrl = 'http://localhost:3000';
-const state = 'xyz';
 const redirectUri = `${myUrl}/authorize_cb`;
 
+const clientUsername = 'test';
+const clientPassword = 'password';
 
 app.set('view engine', 'pug');
 app.set('views', './views');
@@ -23,22 +25,27 @@ app.use(sessions({
 }));
 
 app.get('/authorize', (req, res) => {
-  res.redirect(buildUrl(authServer, {
-    path: 'authorize',
-    queryParams: {
-      response_type: 'code',
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      state
-    }
-  }));
+  crypto.randomBytes(16, (err, buffer) => {
+    const state = buffer.toString('hex');
+    req.session.authorizeState = state;
+
+    res.redirect(buildUrl(authServer, {
+      path: 'authorize',
+      queryParams: {
+        response_type: 'code',
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        state
+      }
+    }));
+  });
 });
 
 app.get('/authorize_cb', (req, res, next) => {
   if (req.query.error) {
     return res.render('error', { error: req.query.error });
   }
-  if (req.query.state !== state) {
+  if (req.query.state !== req.session.authorizeState) {
     return res.render('error', { error: 'state mismatch' });
   }
   if (!req.query.code) {
@@ -56,14 +63,15 @@ app.get('/authorize_cb', (req, res, next) => {
       client_id: clientId
     },
     auth: {
-      username: 'test',
-      password: 'Password1!'
+      username: clientUsername,
+      password: clientPassword
     },
     json: true
   }).then((response) => {
     req.session.auth = response;
     const redirectTo = req.session.redirectTo || '/';
     delete req.session.redirectTo;
+    delete req.session.authorizeState;
     res.redirect(redirectTo);
   }).catch(next);
 
