@@ -46,6 +46,7 @@ app.get('/authorize_cb', (req, res, next) => {
     return res.render('error', { error: req.query.error });
   }
   if (req.query.state !== req.session.authorizeState) {
+    console.log('expected state:', req.session.authorizeState);
     return res.render('error', { error: 'state mismatch' });
   }
   if (!req.query.code) {
